@@ -492,6 +492,7 @@ VALUES ('M000000001', 'U000000001', 'U000000005', 'Hello, I have a question.', C
        ('M000000029', 'U000000003', 'U000000013', 'Is there a juicer?', CURRENT_TIMESTAMP),
        ('M000000030', 'U000000003', 'U000000014', 'Is there a mixer?', CURRENT_TIMESTAMP);
 
+
 -- Insertar datos en la tabla Property
 INSERT INTO Property (property_id, n_bathrooms, title, n_beds, property_type, n_guests, n_rooms, host_user_id,
                       price)
