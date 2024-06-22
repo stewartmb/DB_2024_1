@@ -657,60 +657,50 @@ VALUES ('R000000001', 'B000000001', 'Great place to stay!', 4.5),
        ('R000000018', 'B000000018', 'Cozy and comfortable.', 4.1),
        ('R000000019', 'B000000019', 'Relaxing and rejuvenating.', 4.4),
        ('R000000020', 'B000000020', 'Stylish and modern.', 4.5);
---antes host_raiting 4.50
-select user_id, host_rating, b.booking_id, count(distinct review_id)
-from host
-         join property p on host.user_id = p.host_user_id
-         join booking b on p.property_id = b.property_id
-         join review r on b.booking_id = r.booking_id
-where user_id = 'U000000007'
-group by user_id, host_rating, b.booking_id;
---puntos del guest
-select user_id, points
-from guest
-         join booking b on guest.user_id = b.guest_user_id
-where booking_id = 'B000000004';
---before total price
-select total_price, price, discount_rate
-from host
-         join property p on host.user_id = p.host_user_id
-         join Booking B on p.property_id = B.property_id
-         join Review R on B.booking_id = R.booking_id
-         join promotion p2 on p.property_id = p2.property_id
-where R.booking_id = 'B000000004';
-
-INSERT INTO Booking (booking_id, timestamp, check_in_date, check_out_date, guest_user_id, property_id)
-VALUES ('B000000061', '2024-07-22 12:00:00', '2024-07-26', '2024-07-31', 'U000000004', 'P000000004');
-INSERT INTO review (review_id, booking_id, comment, rating)
-VALUES ('R000000021', 'B000000061', 'Great location!', 5);
---2024-07-22
---after bookiing
-select total_price, price, discount_rate
-from Booking
-         JOIN Property P on Booking.property_id = P.property_id
-         JOIN Promotion PR on P.property_id = PR.property_id
-where booking_id = 'B000000061';
-
-SELECT B.booking_id, B.timestamp, P.promotion_id, P.start_date, P.end_date
-FROM Booking B
-         JOIN Promotion P ON B.property_id = P.property_id
-WHERE B.timestamp BETWEEN P.start_date AND P.end_date;
 
 
---AFTER REVIEW
-select user_id, host_rating, b.booking_id, count(distinct review_id)
-from host
-         join property p on host.user_id = p.host_user_id
-         join booking b on p.property_id = b.property_id
-         join review r on b.booking_id = r.booking_id
-where user_id = 'U000000007'
-group by user_id, host_rating, b.booking_id;
+-- CONSULTAS
 
---afterpuntos del guest
-select user_id, points
-from guest
-         join booking b on guest.user_id = b.guest_user_id
-where booking_id = 'B000000004';
+--Analisis de ocupacion y promedio de ingresos por propiedad por mes:
 
-select * from
-             property;
+SELECT p.property_id,
+       DATE_TRUNC('month', b.check_in_date)                         AS month,
+       COUNT(b.booking_id) * 100.0 /
+       (DATE_PART('day', DATE_TRUNC('month', b.check_in_date) + INTERVAL '1 month - 1 day') -
+        DATE_PART('day', DATE_TRUNC('month', b.check_in_date)) + 1) AS occupancy_rate,
+       AVG(b.total_price)                                           AS average_income
+FROM Property p
+         JOIN
+     Booking b ON p.property_id = b.property_id
+WHERE b.check_in_date BETWEEN '2024-01-01' AND '2024-12-31'
+GROUP BY p.property_id, DATE_TRUNC('month', b.check_in_date)
+ORDER BY p.property_id, month;
+
+-- consulta de jorge
+
+WITH ActiveUsers AS (
+    SELECT
+        u.user_id,
+        u.name,
+        COUNT(DISTINCT b.booking_id) AS total_bookings,
+        COUNT(DISTINCT m.message_id) AS total_messages
+    FROM
+        Usuario u
+    LEFT JOIN
+        Booking b ON u.user_id = b.guest_user_id
+    LEFT JOIN
+        Message m ON u.user_id = m.guest_user_id
+    GROUP BY
+        u.user_id, u.name
+    HAVING
+        COUNT(DISTINCT b.booking_id) > 5 OR COUNT(DISTINCT m.message_id) > 10
+)
+SELECT
+    au.user_id,
+    au.name,
+    au.total_bookings,
+    au.total_messages
+FROM
+    ActiveUsers au
+ORDER BY
+    au.total_bookings DESC, au.total_messages DESC;
