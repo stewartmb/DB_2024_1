@@ -371,9 +371,12 @@ DECLARE
     precio_of_property DECIMAL(10, 2);
     p_start            DATE;
     p_end              DATE;
+    bool               BOOLEAN;
 BEGIN
-    SELECT discount_rate
-    INTO descuento
+    SELECT INTO bool CASE
+                         WHEN COUNT(*) > 0 THEN TRUE
+                         ELSE FALSE
+                         END
     FROM Promotion
     WHERE property_id = NEW.property_id;
 
@@ -387,18 +390,18 @@ BEGIN
     FROM Property
     WHERE property_id = NEW.property_id;
 
-    SELECT start_date, end_date
-    INTO p_start, p_end
+    SELECT start_date, end_date, discount_rate
+    INTO p_start, p_end, descuento
     FROM Promotion
     WHERE property_id = NEW.property_id;
 
-    IF (points_of_guest) > 29 AND (NEW.timestamp BETWEEN p_start AND p_end) THEN
+    IF (points_of_guest) > 29 AND (NEW.timestamp BETWEEN p_start AND p_end) AND bool THEN
         NEW.total_price = ROUND((precio_of_property) *
                                 (1 - (descuento) / 100), 2);
     ELSE
         NEW.total_price = precio_of_property;
     END IF;
-    IF (points_of_guest) > 29 AND (NEW.timestamp BETWEEN p_start AND p_end) THEN
+    IF (points_of_guest) > 29 AND (NEW.timestamp BETWEEN p_start AND p_end) AND bool THEN
         UPDATE Guest
         SET points = points - 30
         WHERE user_id = NEW.guest_user_id;
@@ -678,29 +681,57 @@ ORDER BY p.property_id, month;
 
 -- consulta de jorge
 
-WITH ActiveUsers AS (
-    SELECT
-        u.user_id,
-        u.name,
-        COUNT(DISTINCT b.booking_id) AS total_bookings,
-        COUNT(DISTINCT m.message_id) AS total_messages
-    FROM
-        Usuario u
-    LEFT JOIN
-        Booking b ON u.user_id = b.guest_user_id
-    LEFT JOIN
-        Message m ON u.user_id = m.guest_user_id
-    GROUP BY
-        u.user_id, u.name
-    HAVING
-        COUNT(DISTINCT b.booking_id) > 5 OR COUNT(DISTINCT m.message_id) > 10
-)
-SELECT
-    au.user_id,
-    au.name,
-    au.total_bookings,
-    au.total_messages
-FROM
-    ActiveUsers au
-ORDER BY
-    au.total_bookings DESC, au.total_messages DESC;
+WITH ActiveUsers AS (SELECT u.user_id,
+                            u.name,
+                            COUNT(DISTINCT b.booking_id) AS total_bookings,
+                            COUNT(DISTINCT m.message_id) AS total_messages
+                     FROM Usuario u
+                              LEFT JOIN
+                          Booking b ON u.user_id = b.guest_user_id
+                              LEFT JOIN
+                          Message m ON u.user_id = m.guest_user_id
+                     GROUP BY u.user_id, u.name
+                     HAVING COUNT(DISTINCT b.booking_id) > 5
+                         OR COUNT(DISTINCT m.message_id) > 10)
+SELECT au.user_id,
+       au.name,
+       au.total_bookings,
+       au.total_messages
+FROM ActiveUsers au
+ORDER BY au.total_bookings DESC, au.total_messages DESC;
+
+--"Top 5 de los anfitriones con las propiedades más reservadas y mejor calificadas
+SELECT H.user_id,
+       COUNT(DISTINCT B.booking_id) AS total_bookings,
+       COUNT(DISTINCT R.review_id)  AS total_reviews,
+       H.host_rating
+FROM Host H
+         JOIN
+     Property P ON H.user_id = P.host_user_id
+         JOIN
+     Booking B ON P.property_id = B.property_id
+         JOIN
+     Review R ON B.booking_id = R.booking_id
+WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
+GROUP BY H.user_id, host_rating
+ORDER BY total_bookings DESC,
+         host_rating DESC,
+         total_reviews DESC
+LIMIT 5;
+
+
+-- que typo de propiedades son mas reservadas por mes en el 2024
+
+SELECT P.property_type,
+       COUNT(DISTINCT B.booking_id) AS total_bookings
+
+FROM Property P
+         JOIN
+     Booking B ON P.property_id = B.property_id
+WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
+GROUP BY P.property_type
+ORDER BY total_bookings DESC;
+
+
+-- como se que tan efectivas son las promociones?
+select * from Promotion;
