@@ -217,6 +217,15 @@ ALTER TABLE Review
 ALTER TABLE Property
     ADD CONSTRAINT check_property_type CHECK (property_type IN
                                               ('Entire place', 'Private room', 'Shared room', 'Entire place'));
+ALTER TABLE Amenities
+    ADD CONSTRAINT check_amenity_name
+    CHECK (amenity_name IN ('WiFi', 'Pool', 'Gym', 'Air Conditioning', 'Heating', 'Kitchen', 'Free Parking', 'Washer', 'Dryer', 'TV',
+                            'Hot Tub', 'Fireplace', 'Breakfast Included', '24-Hour Check-in', 'Pet Friendly', 'Elevator', 'Balcony',
+                            'BBQ Grill', 'Laptop-friendly Workspace', 'Smoke Detector', 'Parking', 'Breakfast', 'Laundry', 'Concierge',
+                            'Mini Bar', 'Safe', 'Room Service', 'Hair Dryer', 'Coffee Maker', 'Shuttle Service', 'BBQ Area', 'Nearby Attractions',
+                            'Nearby Dining', 'Beach', 'Mountain View', 'Forest View', 'Lake View', 'City View', 'Country View', 'River View',
+                            'Sea View', 'Garden View', 'Pool View', 'Park View'));
+
 ALTER TABLE Property
     ADD CONSTRAINT check_n_bathrooms CHECK (n_bathrooms >= 0);
 ALTER TABLE Property
@@ -746,112 +755,15 @@ WHERE (x.property_id, x.num_bookings) IN (SELECT y.property_id, MAX(y.num_bookin
                                                 GROUP BY P.property_id) as y
                                           GROUP BY y.property_id);
 
+--3) la cantidad de ammenities que tiene cada propiedad afecta en su rating o cantidad de reservas ?
 
--- BORRADORES DE CONSULTAS:
---Analisis de ocupacion y promedio de ingresos por propiedad por mes:
-
-SELECT p.property_id,
-       DATE_TRUNC('month', b.check_in_date)                         AS month,
-       COUNT(b.booking_id) * 100.0 /
-       (DATE_PART('day', DATE_TRUNC('month', b.check_in_date) + INTERVAL '1 month - 1 day') -
-        DATE_PART('day', DATE_TRUNC('month', b.check_in_date)) + 1) AS occupancy_rate,
-       AVG(b.total_price)                                           AS average_income
-FROM Property p
-         JOIN
-     Booking b ON p.property_id = b.property_id
-WHERE b.check_in_date BETWEEN '2024-01-01' AND '2024-12-31'
-GROUP BY p.property_id, DATE_TRUNC('month', b.check_in_date)
-ORDER BY p.property_id, month;
-
--- consulta de jorge
-
-WITH ActiveUsers AS (SELECT u.user_id,
-                            u.name,
-                            COUNT(DISTINCT b.booking_id) AS total_bookings,
-                            COUNT(DISTINCT m.message_id) AS total_messages
-                     FROM Usuario u
-                              LEFT JOIN
-                          Booking b ON u.user_id = b.guest_user_id
-                              LEFT JOIN
-                          Message m ON u.user_id = m.guest_user_id
-                     GROUP BY u.user_id, u.name
-                     HAVING COUNT(DISTINCT b.booking_id) > 5
-                         OR COUNT(DISTINCT m.message_id) > 10)
-SELECT au.user_id,
-       au.name,
-       au.total_bookings,
-       au.total_messages
-FROM ActiveUsers au
-ORDER BY au.total_bookings DESC, au.total_messages DESC;
-
---"Top 5 de los anfitriones con las propiedades más reservadas y mejor calificadas
-SELECT H.user_id,
-       COUNT(DISTINCT B.booking_id) AS total_bookings,
-       COUNT(DISTINCT R.review_id)  AS total_reviews,
-       H.host_rating
-FROM Host H
-         JOIN
-     Property P ON H.user_id = P.host_user_id
-         JOIN
-     Booking B ON P.property_id = B.property_id
-         JOIN
-     Review R ON B.booking_id = R.booking_id
-WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
-GROUP BY H.user_id, host_rating
-ORDER BY total_bookings DESC,
-         host_rating DESC,
-         total_reviews DESC
-LIMIT 5;
-
-
-
-SELECT EXTRACT(MONTH FROM B.check_in_date) AS month,
-       P.property_type,
-       COUNT(B.booking_id)                 AS total_bookings
+SELECT P.property_id,
+       COUNT(DISTINCT A.amenity_id) AS num_amenities,
+       COUNT(DISTINCT B.booking_id) AS num_bookings,
+       AVG(R.rating) AS avg_rating
 FROM Property P
-         JOIN Booking B on P.property_id = B.property_id
-WHERE B.check_in_date BETWEEN '2024-01-01' AND '2024-12-31'
-GROUP BY month, P.property_type
-HAVING COUNT(B.booking_id) >
-       (SELECT AVG(total_bookings)
-        FROM (SELECT EXTRACT(MONTH FROM B.check_in_date) AS month,
-                     COUNT(B.booking_id)                 AS total_bookings
-              FROM Property P
-                       JOIN Booking B on P.property_id = B.property_id
-              WHERE B.check_in_date BETWEEN '2024-01-01' AND '2024-12-31'
-              GROUP BY month, P.property_type) AS avg_bookings)
-ORDER BY month, total_bookings DESC;
-
-
---
-SELECT P.property_type,
-       COUNT(DISTINCT B.booking_id) AS total_bookings
-
-FROM Property P
-         JOIN
-     Booking B ON P.property_id = B.property_id
-WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
-GROUP BY P.property_type
-ORDER BY total_bookings DESC;
-
-
---before
-SELECT *
-FROM Guest
-WHERE user_id = 'U000000001';
-
-INSERT INTO Property (property_id, n_bathrooms, title, n_beds, property_type, n_guests, n_rooms, host_user_id,
-                      price)
-VALUES ('P000000071', 2, 'Cozy Apartment', 3, 'Entire place', 4, 2, 'U000000005', 100.00);
-
-INSERT INTO Promotion (promotion_id, start_date, end_date, discount_rate, prom_description, property_id)
-VALUES ('PR00000071', '2024-01-01', '2024-12-31', 10.00, 'Winter Promotion', 'P000000071');
-
-INSERT INTO Booking (booking_id, timestamp, check_in_date, check_out_date, guest_user_id, property_id)
-VALUES ('B000000071', '2024-06-01 12:00:00', '2024-06-05', '2024-06-10', 'U000000001', 'P000000071');
-
-
---after
-SELECT *
-FROM Guest
-WHERE user_id = 'U000000001';
+JOIN Amenities A ON P.property_id = A.property_id
+JOIN Booking B ON P.property_id = B.property_id
+JOIN Review R ON B.booking_id = R.booking_id
+GROUP BY P.property_id, P.property_type
+ORDER BY num_amenities DESC, num_bookings DESC, avg_rating DESC;
