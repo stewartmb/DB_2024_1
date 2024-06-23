@@ -577,21 +577,21 @@ VALUES ('B000000001', '2024-06-01 12:00:00', '2024-06-05', '2024-06-10', 'U00000
        ('B000000043', '2024-07-13 12:00:00', '2024-07-17', '2024-07-22', 'U000000003', 'P000000013'),
        ('B000000044', '2024-07-14 12:00:00', '2024-07-18', '2024-07-23', 'U000000004', 'P000000014'),
        ('B000000045', '2024-07-15 12:00:00', '2024-07-19', '2024-07-24', 'U000000005', 'P000000015'),
-       ('B000000046', '2024-07-16 12:00:00', '2024-07-20', '2024-07-25', 'U000000006', 'P000000016'),
-       ('B000000047', '2024-07-17 12:00:00', '2024-07-21', '2024-07-26', 'U000000007', 'P000000017'),
+       ('B000000046', '2024-07-16 12:00:00', '2024-07-20', '2024-07-25', 'U000000006', 'P000000018'),
+       ('B000000047', '2024-07-17 12:00:00', '2024-07-21', '2024-07-26', 'U000000007', 'P000000018'),
        ('B000000048', '2024-07-18 12:00:00', '2024-07-22', '2024-07-27', 'U000000008', 'P000000018'),
-       ('B000000049', '2024-07-19 12:00:00', '2024-07-23', '2024-07-28', 'U000000009', 'P000000019'),
-       ('B000000050', '2024-07-20 12:00:00', '2024-07-24', '2024-07-29', 'U000000010', 'P000000020'),
-       ('B000000051', '2024-07-21 12:00:00', '2024-07-25', '2024-07-30', 'U000000001', 'P000000021'),
+       ('B000000049', '2024-07-19 12:00:00', '2024-07-23', '2024-07-28', 'U000000009', 'P000000017'),
+       ('B000000050', '2024-07-20 12:00:00', '2024-07-24', '2024-07-29', 'U000000010', 'P000000017'),
+       ('B000000051', '2024-07-21 12:00:00', '2024-07-25', '2024-07-30', 'U000000001', 'P000000020'),
        ('B000000052', '2024-07-22 12:00:00', '2024-07-26', '2024-07-31', 'U000000002', 'P000000022'),
-       ('B000000053', '2024-07-23 12:00:00', '2024-07-27', '2024-08-01', 'U000000003', 'P000000023'),
-       ('B000000054', '2024-07-24 12:00:00', '2024-07-28', '2024-08-02', 'U000000004', 'P000000024'),
+       ('B000000053', '2024-07-23 12:00:00', '2024-07-27', '2024-08-01', 'U000000003', 'P000000022'),
+       ('B000000054', '2024-07-24 12:00:00', '2024-07-28', '2024-08-02', 'U000000004', 'P000000022'),
        ('B000000055', '2024-07-25 12:00:00', '2024-07-29', '2024-08-03', 'U000000005', 'P000000025'),
-       ('B000000056', '2024-07-26 12:00:00', '2024-07-30', '2024-08-04', 'U000000006', 'P000000026'),
-       ('B000000057', '2024-07-27 12:00:00', '2024-07-31', '2024-08-05', 'U000000007', 'P000000027'),
-       ('B000000058', '2024-07-28 12:00:00', '2024-08-01', '2024-08-06', 'U000000008', 'P000000028'),
-       ('B000000059', '2024-07-29 12:00:00', '2024-08-02', '2024-08-07', 'U000000009', 'P000000029'),
-       ('B000000060', '2024-07-30 12:00:00', '2024-08-03', '2024-08-08', 'U000000010', 'P000000030');
+       ('B000000056', '2024-07-26 12:00:00', '2024-07-30', '2024-08-04', 'U000000006', 'P000000025'),
+       ('B000000057', '2024-07-27 12:00:00', '2024-07-31', '2024-08-05', 'U000000007', 'P000000025'),
+       ('B000000058', '2024-07-28 12:00:00', '2023-08-01', '2024-08-06', 'U000000008', 'P000000002'),
+       ('B000000059', '2024-07-29 12:00:00', '2024-08-02', '2024-08-07', 'U000000009', 'P000000001'),
+       ('B000000060', '2024-07-30 12:00:00', '2024-08-03', '2024-08-08', 'U000000010', 'P000000001');
 
 
 -- Insertar datos en la tabla Promotion
@@ -663,75 +663,47 @@ VALUES ('R000000001', 'B000000001', 'Great place to stay!', 4.5),
 
 
 -- CONSULTAS
+-- que property_type son mas populares en las
+-- propiedades que su numero de reservaciones
+-- excede el promedio que realizaron cada mes del año 2024
+-- codigo de las propiedades que tienen mas reservaciones que el promedio
 
---Analisis de ocupacion y promedio de ingresos por propiedad por mes:
-
-SELECT p.property_id,
-       DATE_TRUNC('month', b.check_in_date)                         AS month,
-       COUNT(b.booking_id) * 100.0 /
-       (DATE_PART('day', DATE_TRUNC('month', b.check_in_date) + INTERVAL '1 month - 1 day') -
-        DATE_PART('day', DATE_TRUNC('month', b.check_in_date)) + 1) AS occupancy_rate,
-       AVG(b.total_price)                                           AS average_income
-FROM Property p
-         JOIN
-     Booking b ON p.property_id = b.property_id
-WHERE b.check_in_date BETWEEN '2024-01-01' AND '2024-12-31'
-GROUP BY p.property_id, DATE_TRUNC('month', b.check_in_date)
-ORDER BY p.property_id, month;
-
--- consulta de jorge
-
-WITH ActiveUsers AS (SELECT u.user_id,
-                            u.name,
-                            COUNT(DISTINCT b.booking_id) AS total_bookings,
-                            COUNT(DISTINCT m.message_id) AS total_messages
-                     FROM Usuario u
-                              LEFT JOIN
-                          Booking b ON u.user_id = b.guest_user_id
-                              LEFT JOIN
-                          Message m ON u.user_id = m.guest_user_id
-                     GROUP BY u.user_id, u.name
-                     HAVING COUNT(DISTINCT b.booking_id) > 5
-                         OR COUNT(DISTINCT m.message_id) > 10)
-SELECT au.user_id,
-       au.name,
-       au.total_bookings,
-       au.total_messages
-FROM ActiveUsers au
-ORDER BY au.total_bookings DESC, au.total_messages DESC;
-
---"Top 5 de los anfitriones con las propiedades más reservadas y mejor calificadas
-SELECT H.user_id,
-       COUNT(DISTINCT B.booking_id) AS total_bookings,
-       COUNT(DISTINCT R.review_id)  AS total_reviews,
-       H.host_rating
-FROM Host H
-         JOIN
-     Property P ON H.user_id = P.host_user_id
-         JOIN
-     Booking B ON P.property_id = B.property_id
-         JOIN
-     Review R ON B.booking_id = R.booking_id
-WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
-GROUP BY H.user_id, host_rating
-ORDER BY total_bookings DESC,
-         host_rating DESC,
-         total_reviews DESC
-LIMIT 5;
-
-
--- que typo de propiedades son mas reservadas por mes en el 2024
-
-SELECT P.property_type,
-       COUNT(DISTINCT B.booking_id) AS total_bookings
-
-FROM Property P
-         JOIN
-     Booking B ON P.property_id = B.property_id
-WHERE B.timestamp BETWEEN '2024-05-31' AND '2024-07-01'
-GROUP BY P.property_type
-ORDER BY total_bookings DESC;
-
-
--- como se que tan efectivas son las promociones?
-select * from Promotion;
+SELECT w.month, property_type ,w.num
+FROM
+(SELECT EXTRACT(MONTH FROM check_in_date) AS month , P.property_type, COUNT(DISTINCT booking_id) AS num
+       FROM Property P
+         JOIN Booking ON P.property_id = Booking.property_id
+WHERE P.property_id IN (SELECT x.property_id
+FROM (SELECT P.property_id, COUNT(DISTINCT B.booking_id) AS total_bookings
+      FROM Property P
+               JOIN Booking B on P.property_id = B.property_id
+      WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+      GROUP BY P.property_id) as x
+WHERE x.total_bookings > (SELECT AVG(y.total_bookings)
+                          FROM (SELECT COUNT(DISTINCT B.booking_id) AS total_bookings
+                                FROM Property P
+                                         JOIN Booking B on P.property_id = B.property_id
+                                WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                GROUP BY P.property_id) as y))
+GROUP BY month, P.property_type) as w
+WHERE (w.month, w.num) IN(
+SELECT w.month,max(w.num)
+FROM
+(SELECT EXTRACT(MONTH FROM check_in_date) AS month , COUNT(DISTINCT booking_id) AS num
+       FROM Property P
+         JOIN Booking ON P.property_id = Booking.property_id
+WHERE P.property_id IN (SELECT x.property_id
+FROM (SELECT P.property_id, COUNT(DISTINCT B.booking_id) AS total_bookings
+      FROM Property P
+               JOIN Booking B on P.property_id = B.property_id
+      WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+      GROUP BY P.property_id) as x
+WHERE x.total_bookings > (SELECT AVG(y.total_bookings)
+                          FROM (SELECT COUNT(DISTINCT B.booking_id) AS total_bookings
+                                FROM Property P
+                                         JOIN Booking B on P.property_id = B.property_id
+                                WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                GROUP BY P.property_id) as y))
+GROUP BY month, P.property_type) as w
+GROUP BY w.month
+ORDER BY w.month ASC);
