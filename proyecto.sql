@@ -713,7 +713,7 @@ WHERE (w.month, w.num) IN (SELECT w.month, max(w.num)
                                                                                          GROUP BY P.property_id) as y))
                                  GROUP BY month, P.property_type) as w
                            GROUP BY w.month
-                           ORDER BY w.month ASC);
+                           ORDER BY w.month );
 
 
 -- 2) como se que tan efectivas son las promociones?
