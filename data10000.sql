@@ -388,19 +388,16 @@ ALTER TABLE Booking DISABLE TRIGGER before_booking_insert;
 
 
 --insertar data provicional de 1000 a partir de un csv
-COPY usuario FROM '/Users/stewart/BD/data1000/usuarios1000.csv' DELIMITER ',' CSV HEADER;
-COPY Guest (user_id) FROM '/Users/stewart/BD/data1000/guests1000.csv' DELIMITER ',' CSV HEADER;
-COPY Host (user_id) FROM '/Users/stewart/BD/data1000/hosts1000.csv' DELIMITER ',' CSV HEADER;
-COPY Message FROM '/Users/stewart/BD/data1000/messages1000.csv' DELIMITER ',' CSV HEADER;
-COPY Property (property_id, n_bathrooms, title, n_beds, property_type, n_guests, n_rooms, host_user_id,
-               price) FROM '/Users/stewart/BD/data1000/properties1000.csv' DELIMITER ',' CSV HEADER;
-COPY Promotion (promotion_id, start_date, end_date, discount_rate, prom_description,
-                property_id) FROM '/Users/stewart/BD/data1000/promotions1000.csv' DELIMITER ',' CSV HEADER;
-COPY Booking (booking_id, timestamp, check_in_date, check_out_date, guest_user_id,
-              property_id) FROM '/Users/stewart/BD/data1000/bookings1000.csv' DELIMITER ',' CSV HEADER;
-COPY Amenities FROM '/Users/stewart/BD/data1000/amenities1000.csv' DELIMITER ',' CSV HEADER;
-COPY SelectFavorite FROM '/Users/stewart/BD/data1000/select_favorites1000.csv' DELIMITER ',' CSV HEADER;
-COPY Review FROM '/Users/stewart/BD/data1000/reviews1000.csv' DELIMITER ',' CSV HEADER;
+COPY usuario FROM '/Users/stewart/BD/data10000/usuarios10000.csv' DELIMITER ',' CSV HEADER;
+COPY Guest(user_id) FROM '/Users/stewart/BD/data10000/guests10000.csv' DELIMITER ',' CSV HEADER;
+COPY Host(user_id) FROM '/Users/stewart/BD/data10000/hosts10000.csv' DELIMITER ',' CSV HEADER;
+COPY Message FROM '/Users/stewart/BD/data10000/messages10000.csv' DELIMITER ',' CSV HEADER;
+COPY Property(property_id, n_bathrooms, title, n_beds, property_type, n_guests, n_rooms, host_user_id, price)  FROM '/Users/stewart/BD/data10000/properties10000.csv' DELIMITER ',' CSV HEADER;
+COPY Promotion(promotion_id, start_date, end_date, discount_rate, prom_description, property_id)  FROM '/Users/stewart/BD/data10000/promotions10000.csv' DELIMITER ',' CSV HEADER;
+COPY Booking(booking_id, timestamp, check_in_date, check_out_date, guest_user_id, property_id)  FROM '/Users/stewart/BD/data10000/bookings10000.csv' DELIMITER ',' CSV HEADER;
+COPY Amenities FROM '/Users/stewart/BD/data10000/amenities10000.csv' DELIMITER ',' CSV HEADER;
+COPY Review FROM '/Users/stewart/BD/data10000/reviews10000.csv' DELIMITER ',' CSV HEADER;
+COPY SelectFavorite FROM '/Users/stewart/BD/data10000/select_favorites10000.csv' DELIMITER ',' CSV HEADER;
 
 
 
