@@ -1,0 +1,97 @@
+
+-- CONSULTAS
+
+-- 1) que property_type son mas populares en las
+-- propiedades que su numero de reservaciones
+-- excede el promedio que realizaron cada mes del año 2024
+-- codigo de las propiedades que tienen mas reservaciones que el promedio
+
+SELECT w.month, property_type, w.num
+FROM (SELECT EXTRACT(MONTH FROM check_in_date) AS month, P.property_type, COUNT(DISTINCT booking_id) AS num
+      FROM Property P
+               JOIN Booking ON P.property_id = Booking.property_id
+      WHERE P.property_id IN (SELECT x.property_id
+                              FROM (SELECT P.property_id, COUNT(DISTINCT B.booking_id) AS total_bookings
+                                    FROM Property P
+                                             JOIN Booking B on P.property_id = B.property_id
+                                    WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                    GROUP BY P.property_id) as x
+                              WHERE x.total_bookings > (SELECT AVG(y.total_bookings)
+                                                        FROM (SELECT COUNT(DISTINCT B.booking_id) AS total_bookings
+                                                              FROM Property P
+                                                                       JOIN Booking B on P.property_id = B.property_id
+                                                              WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                                              GROUP BY P.property_id) as y))
+      GROUP BY month, P.property_type) as w
+WHERE (w.month, w.num) IN (SELECT w.month, max(w.num)
+                           FROM (SELECT EXTRACT(MONTH FROM check_in_date) AS month, COUNT(DISTINCT booking_id) AS num
+                                 FROM Property P
+                                          JOIN Booking ON P.property_id = Booking.property_id
+                                 WHERE P.property_id IN (SELECT x.property_id
+                                                         FROM (SELECT P.property_id, COUNT(DISTINCT B.booking_id) AS total_bookings
+                                                               FROM Property P
+                                                                        JOIN Booking B on P.property_id = B.property_id
+                                                               WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                                               GROUP BY P.property_id) as x
+                                                         WHERE x.total_bookings > (SELECT AVG(y.total_bookings)
+                                                                                   FROM (SELECT COUNT(DISTINCT B.booking_id) AS total_bookings
+                                                                                         FROM Property P
+                                                                                                  JOIN Booking B on P.property_id = B.property_id
+                                                                                         WHERE EXTRACT(YEAR FROM B.check_in_date) = 2024
+                                                                                         GROUP BY P.property_id) as y))
+                                 GROUP BY month, P.property_type) as w
+                           GROUP BY w.month
+                           ORDER BY w.month );
+
+
+-- 2) como se que tan efectivas son las promociones?
+-- codigo de las propiedades que tienen mas reservaciones con promocion o sin ella
+
+SELECT x.property_id,
+       x.promotion_effect,
+       x.num_bookings
+FROM (SELECT P.property_id,
+             'SIN'               AS promotion_effect,
+             COUNT(B.booking_id) AS num_bookings
+      FROM Property P
+               JOIN Booking B on P.property_id = B.property_id
+      WHERE B.total_price = P.price
+      GROUP BY P.property_id
+      UNION
+      SELECT P.property_id,
+             'CON'               AS promotion_effect,
+             COUNT(B.booking_id) AS num_bookings
+      FROM Property P
+               JOIN Booking B on P.property_id = B.property_id
+      WHERE B.total_price < P.price
+      GROUP BY P.property_id) as x
+WHERE (x.property_id, x.num_bookings) IN (SELECT y.property_id, MAX(y.num_bookings)
+                                          FROM (SELECT P.property_id,
+                                                       'SIN'               AS promotion_effect,
+                                                       COUNT(B.booking_id) AS num_bookings
+                                                FROM Property P
+                                                         JOIN Booking B on P.property_id = B.property_id
+                                                WHERE B.total_price = P.price
+                                                GROUP BY P.property_id
+                                                UNION
+                                                SELECT P.property_id,
+                                                       'CON'               AS promotion_effect,
+                                                       COUNT(B.booking_id) AS num_bookings
+                                                FROM Property P
+                                                         JOIN Booking B on P.property_id = B.property_id
+                                                WHERE B.total_price < P.price
+                                                GROUP BY P.property_id) as y
+                                          GROUP BY y.property_id);
+
+--3) la cantidad de ammenities que tiene cada propiedad afecta en su rating o cantidad de reservas ?
+
+SELECT P.property_id,
+       COUNT(DISTINCT A.amenity_id) AS num_amenities,
+       COUNT(DISTINCT B.booking_id) AS num_bookings,
+       AVG(R.rating) AS avg_rating
+FROM Property P
+JOIN Amenities A ON P.property_id = A.property_id
+JOIN Booking B ON P.property_id = B.property_id
+JOIN Review R ON B.booking_id = R.booking_id
+GROUP BY P.property_id, P.property_type
+ORDER BY num_amenities DESC, num_bookings DESC, avg_rating DESC;
