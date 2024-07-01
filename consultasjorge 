@@ -1,0 +1,72 @@
+-- Consulta 1: Propiedades con Mayor Ingresos y Reseñas Detalladas
+-- Descripción: Encuentra las propiedades con los mayores ingresos generados en el último año, incluyendo detalles de reservas y reseñas, y filtrando por propiedades con más de 20 reseñas.
+
+SELECT p.property_id, p.title, p.location, COUNT(b.booking_id) AS num_bookings, SUM(b.total_price) AS total_income, AVG(r.rating) AS avg_rating, STRING_AGG(r.comments, '; ') AS all_comments
+FROM Property p
+JOIN Booking b ON p.property_id = b.property_id
+JOIN Review r ON p.property_id = r.property_id
+WHERE b.check_in_date >= '2023-01-01' AND b.check_out_date <= '2023-12-31'
+AND b.booking_id IN (
+    SELECT b1.booking_id
+    FROM Booking b1
+    GROUP BY b1.property_id
+    HAVING COUNT(b1.booking_id) > 20
+)
+GROUP BY p.property_id, p.title, p.location
+HAVING AVG(r.rating) >= (
+    SELECT AVG(r2.rating)
+    FROM Review r2
+    WHERE r2.property_id = p.property_id
+)
+ORDER BY total_income DESC, avg_rating DESC;
+
+
+-- Consulta 2: Análisis de Interacciones de Mensajes Entre Usuarios
+-- Descripción: Analiza las interacciones entre usuarios, mostrando detalles de mensajes, usuarios y propiedades involucradas, filtrando por propiedades con más de 10 reservas en el último año.
+
+SELECT m.message_id, m.timestamp, m.content,
+       u1.user_id AS sender_id, u1.name AS sender_name,
+       u2.user_id AS receiver_id, u2.name AS receiver_name,
+       p.property_id, p.title, p.location,
+       COUNT(m.message_id) AS num_messages,
+       (SELECT COUNT(*) FROM Message m2 WHERE m2.sender_id = u1.user_id) AS num_sent_messages,
+       (SELECT COUNT(*) FROM Message m3 WHERE m3.receiver_id = u2.user_id) AS num_received_messages
+FROM Message m
+JOIN User u1 ON m.sender_id = u1.user_id
+JOIN User u2 ON m.receiver_id = u2.user_id
+LEFT JOIN Booking b ON m.booking_id = b.booking_id
+LEFT JOIN Property p ON b.property_id = p.property_id
+WHERE p.property_id IN (
+    SELECT b1.property_id
+    FROM Booking b1
+    WHERE b1.check_in_date >= '2023-01-01' AND b1.check_out_date <= '2023-12-31'
+    GROUP BY b1.property_id
+    HAVING COUNT(b1.booking_id) > 10
+)
+GROUP BY m.message_id, m.timestamp, m.content, u1.user_id, u1.name, u2.user_id, u2.name, p.property_id, p.title, p.location
+ORDER BY num_messages DESC, m.timestamp DESC;
+
+-- Consulta 3: Resumen de Reseñas y Reservas por Huésped y Anfitrión
+-- Descripción: Obtén un resumen detallado de todas las reseñas y reservas, incluyendo información del huésped, anfitrión y propiedad, y filtrando por huéspedes con más de 5 reseñas.
+
+SELECT r.review_id, r.rating, r.comments,
+       g.user_id AS guest_id, g.name AS guest_name,
+       h.user_id AS host_id, h.name AS host_name,
+       p.property_id, p.title, p.location,
+       b.booking_id, b.check_in_date, b.check_out_date,
+       COUNT(r.review_id) AS num_reviews,
+       AVG(r.rating) AS avg_rating,
+       (SELECT AVG(r2.rating) FROM Review r2 WHERE r2.guest_id = g.user_id) AS guest_avg_rating
+FROM Review r
+JOIN Booking b ON r.booking_id = b.booking_id
+JOIN Guest g ON r.guest_id = g.user_id
+JOIN Property p ON b.property_id = p.property_id
+JOIN Host h ON p.user_id = h.user_id
+WHERE g.user_id IN (
+    SELECT r1.guest_id
+    FROM Review r1
+    GROUP BY r1.guest_id
+    HAVING COUNT(r1.review_id) > 5
+)
+GROUP BY r.review_id, r.rating, r.comments, g.user_id, g.name, h.user_id, h.name, p.property_id, p.title, p.location, b.booking_id, b.check_in_date, b.check_out_date
+ORDER BY avg_rating DESC, num_reviews DESC;
