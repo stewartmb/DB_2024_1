@@ -1,0 +1,26 @@
+-- Eliminar tablas
+DROP TABLE IF EXISTS usuario CASCADE;
+DROP TABLE IF EXISTS Guest CASCADE;
+DROP TABLE IF EXISTS Host CASCADE;
+DROP TABLE IF EXISTS Message CASCADE;
+DROP TABLE IF EXISTS Booking CASCADE;
+DROP TABLE IF EXISTS Property CASCADE;
+DROP TABLE IF EXISTS Promotion CASCADE;
+DROP TABLE IF EXISTS Amenities CASCADE;
+DROP TABLE IF EXISTS Review CASCADE;
+DROP TABLE IF EXISTS SelectFavorite CASCADE;
+-- eliminar triggers
+DROP TRIGGER IF EXISTS increment_guest_points ON Booking;
+DROP TRIGGER IF EXISTS update_host_rating ON Review;
+DROP TRIGGER IF EXISTS after_review_insert_for_host ON Review;
+DROP TRIGGER IF EXISTS before_booking_insert ON Booking;
+DROP TRIGGER IF EXISTS update_property_rating ON Review;
+DROP TRIGGER IF EXISTS after_review_insert ON Review;
+DROP TRIGGER IF EXISTS after_booking_insert ON Booking;
+
+
+-- eliminar funciones
+DROP FUNCTION IF EXISTS increment_guest_points;
+DROP FUNCTION IF EXISTS update_property_rating;
+DROP FUNCTION IF EXISTS update_host_rating;
+DROP FUNCTION IF EXISTS adjust_total_price;
